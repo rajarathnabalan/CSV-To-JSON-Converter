@@ -17,17 +17,23 @@ import (
 func main() {
 	path := flag.String("path", "./data.csv", "Path of the file")
 	flag.Parse()
-	fileBytes, fileNPath := ReadCSV(path)
-	SaveFile(fileBytes, fileNPath)
+	fileBytes, fileNPath, err := ReadCSV(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = SaveFile(fileBytes, fileNPath)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(strings.Repeat("=", 10), "Done", strings.Repeat("=", 10))
 }
 
 // ReadCSV to read the content of CSV File
-func ReadCSV(path *string) ([]byte, string) {
+func ReadCSV(path *string) ([]byte, string, error) {
 	csvFile, err := os.Open(*path)
 
 	if err != nil {
-		log.Fatal("The file is not found || wrong root")
+		return nil, "", fmt.Errorf("The file is not found || wrong root")
 	}
 	defer csvFile.Close()
 
@@ -35,7 +41,7 @@ func ReadCSV(path *string) ([]byte, string) {
 	content, _ := reader.ReadAll()
 
 	if len(content) < 1 {
-		log.Fatal("Something wrong, the file maybe empty or length of the lines are not the same")
+		return nil, "", fmt.Errorf("Something wrong, the file maybe empty or length of the lines are not the same")
 	}
 
 	headersArr := make([]string, 0)
@@ -80,12 +86,10 @@ func ReadCSV(path *string) ([]byte, string) {
 	newFileName := filepath.Base(*path)
 	newFileName = newFileName[0:len(newFileName)-len(filepath.Ext(newFileName))] + ".json"
 	r := filepath.Dir(*path)
-	return x, filepath.Join(r, newFileName)
+	return x, filepath.Join(r, newFileName), nil
 }
 
 // SaveFile Will Save the file, magic right?
-func SaveFile(myFile []byte, path string) {
-	if err := ioutil.WriteFile(path, myFile, os.FileMode(0644)); err != nil {
-		panic(err)
-	}
+func SaveFile(myFile []byte, path string) error {
+	return ioutil.WriteFile(path, myFile, os.FileMode(0644))
 }
